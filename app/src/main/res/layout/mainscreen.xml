@@ -7,14 +7,42 @@
     android:background="#333333"
     >
 
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabs"
-        android:contentDescription="tabs"
+    <LinearLayout
+        android:id="@+id/bar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
+        android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/tabs"
+        android:gravity="right"
+        >
+
+        <ImageView
+            android:layout_gravity="center"
+            android:id="@+id/login"
+            android:contentDescription="login_person"
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:src="@drawable/person"
+            android:clickable="true"
+            android:onClick="login"
+            android:focusable="true" />
+
+    </LinearLayout>
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:contentDescription="tabs"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/bar"
+        app:layout_constraintTop_toBottomOf="@+id/bar"
+        app:layout_constraintBottom_toTopOf="@+id/viewPager"
+        >
+
     </com.google.android.material.tabs.TabLayout>
 
     <androidx.viewpager2.widget.ViewPager2
