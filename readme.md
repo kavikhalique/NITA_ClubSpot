@@ -1,17 +1,17 @@
- NITA ClubSpot - Readme
+# NITA ClubSpot - Readme
 
- Table of Contents
-1. [Introduction]
-2. [Features]
-3. [Installation]
+## Table of Contents
+1. [Introduction](#introduction)
+2. [Features](#features)
+3. [Installation](#installation)
 4. [Usage](#usage)
-5. [Contributing]
-6. [License]
+5. [Contributing](#contributing)
+6. [License](#license)
 
- 1. Introduction
+## 1. Introduction
 NITA ClubSpot is an Android app developed for the students of National Institute of Technology Agartala to foster communication and engagement among various clubs on campus. The app provides a centralized platform where official clubs can post their upcoming events, and users can upvote, downvote, and star their favorite clubs to receive updates and notifications. It also includes a login feature for users and an admin section for club admins to manage events effectively.
 
- 2. Features
+## 2. Features
 - **Events Section**: All official clubs can publish their upcoming and past events in this section, providing students with up-to-date information about activities on campus.
 
 - **User Authentication**: Users can create accounts and log in to the app. The login feature is necessary to enable functionalities like upvoting, downvoting, and starring favorite clubs.
@@ -23,9 +23,6 @@ NITA ClubSpot is an Android app developed for the students of National Institute
 - **Admin Section**: Club admins have access to an exclusive admin section where they can add, update, and delete events for their respective clubs.
 
 ## 3. Installation
-
-//This app is not available in playstore till now but very soon it will be
-
 As an Android app, NITA ClubSpot will be available for download from the Google Play Store. To install the app on your device, follow these steps:
 
 1. Open the Google Play Store on your Android device.
@@ -45,4 +42,6 @@ As an Android app, NITA ClubSpot will be available for download from the Google 
 5. **Admin Controls**: Club admins can log in and access the admin section to add, update, or delete events for their respective clubs.
 
 ## 5. Contributing
-We welcome contributions to improve NITA ClubSpot.
+I welcome contributions to improve NITA ClubSpot. If you'd like to contribute, please fork.
+
+Developed By Kavi Khalique
