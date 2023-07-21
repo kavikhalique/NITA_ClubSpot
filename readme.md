@@ -44,4 +44,9 @@ As an Android app, NITA ClubSpot will be available for download from the Google 
 ## 5. Contributing
 I welcome contributions to improve NITA ClubSpot. If you'd like to contribute, please fork.
 
+## 6. WireFrame
+
+![NITA ClubSpot](https://github.com/kavikhalique/NITA_ClubSpot/assets/120750626/e728474a-3b4f-48b8-9b4e-13b27cea7b18)
+
+
 Developed By Kavi Khalique
