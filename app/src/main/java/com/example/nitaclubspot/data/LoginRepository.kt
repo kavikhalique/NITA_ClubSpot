@@ -1,6 +1,9 @@
 package com.example.nitaclubspot.data
 
+import androidx.appcompat.app.AppCompatActivity
+import com.example.nitaclubspot.MainScreen
 import com.example.nitaclubspot.data.model.LoggedInUser
+import com.example.nitaclubspot.ui.login.LoginActivity
 
 /**
  * Class that requests authentication and user information from the remote data source and
@@ -16,11 +19,11 @@ class LoginRepository(val dataSource: LoginDataSource) {
     val isLoggedIn: Boolean
         get() = user != null
 
-    init {
-        // If user credentials will be cached in local storage, it is recommended it be encrypted
-        // @see https://developer.android.com/training/articles/keystore
-        user = null
-    }
+//    init {
+//        // If user credentials will be cached in local storage, it is recommended it be encrypted
+//        // @see https://developer.android.com/training/articles/keystore
+//        user = null
+//    }
 
     fun logout() {
         user = null
@@ -40,6 +43,7 @@ class LoginRepository(val dataSource: LoginDataSource) {
 
     private fun setLoggedInUser(loggedInUser: LoggedInUser) {
         this.user = loggedInUser
+
         // If user credentials will be cached in local storage, it is recommended it be encrypted
         // @see https://developer.android.com/training/articles/keystore
     }

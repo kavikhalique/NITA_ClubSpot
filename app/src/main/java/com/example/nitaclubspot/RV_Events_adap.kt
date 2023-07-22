@@ -14,6 +14,10 @@ class RV_Events_adap(val context: Context): RecyclerView.Adapter<RV_Events_adap.
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         val binding= RvEventsRowsBinding.bind(itemView)
+        val up_button = binding.upbutton
+        val down_button = binding.downbutton
+        var up_state=false
+        var down_state=false
 
         val heading= binding.heading
         val content= binding.content
@@ -43,6 +47,43 @@ class RV_Events_adap(val context: Context): RecyclerView.Adapter<RV_Events_adap.
             intent.putExtra("Key",eventsdata[position].Header)
             intent.putExtra("Key2",eventsdata[position].Dscrp)
             startActivity(context,intent, Bundle())
+        }
+
+        holder.up_button.setOnClickListener(){
+            // if button has aready been clicked then disable it
+            if(holder.up_state){
+                holder.up_state=false
+                holder.up_button.setImageResource(R.drawable.arrow_up_grey)
+            }
+            // if button was not clicked before then enable it
+            else{
+                holder.up_state=true
+                holder.up_button.setImageResource(R.drawable.arrow_up_green)
+            }
+            // if another button is enabled then disable it
+            if(holder.down_state){
+                holder.down_button.setImageResource(R.drawable.arrow_down_grey)
+                holder.down_state=false
+            }
+        }
+
+        holder.down_button.setOnClickListener(){
+            // if button has aready been clicked then disable it
+            if(holder.down_state){
+                holder.down_button.setImageResource(R.drawable.arrow_down_grey)
+                holder.down_state=false
+            }
+            // if button was not clicked before then enable it
+            else{
+                holder.down_state=true
+                holder.down_button.setImageResource(R.drawable.arrow_down_red)
+
+            }
+            // if another button is enabled then disable it
+            if(holder.up_state){
+                holder.up_state=false
+                holder.up_button.setImageResource(R.drawable.arrow_up_grey)
+            }
         }
     }
 }

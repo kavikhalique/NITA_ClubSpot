@@ -1,6 +1,8 @@
 package com.example.nitaclubspot.ui.login
 
 import android.app.Activity
+import android.content.Intent
+import android.content.SharedPreferences
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import android.os.Bundle
@@ -12,6 +14,7 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.Toast
+import com.example.nitaclubspot.MainScreen
 import com.example.nitaclubspot.databinding.ActivityLoginBinding
 
 import com.example.nitaclubspot.R
@@ -49,6 +52,8 @@ class LoginActivity : AppCompatActivity() {
             }
         })
 
+        //it continuously observes the viemodel and as login results
+        // gets inserted into LoginResult it performs further actions
         loginViewModel.loginResult.observe(this@LoginActivity, Observer {
             val loginResult = it ?: return@Observer
 
@@ -58,11 +63,13 @@ class LoginActivity : AppCompatActivity() {
             }
             if (loginResult.success != null) {
                 updateUiWithUser(loginResult.success)
-            }
-            setResult(Activity.RESULT_OK)
 
-            //Complete and destroy login activity once successful
-            finish()
+                setResult(Activity.RESULT_OK)
+
+                //Complete and destroy login activity once successful
+
+                finish()
+            }
         })
 
         username.afterTextChanged {
@@ -92,6 +99,7 @@ class LoginActivity : AppCompatActivity() {
             }
 
             login.setOnClickListener {
+
                 loading.visibility = View.VISIBLE
                 loginViewModel.login(username.text.toString(), password.text.toString())
             }
@@ -102,11 +110,21 @@ class LoginActivity : AppCompatActivity() {
         val welcome = getString(R.string.welcome)
         val displayName = model.displayName
         // TODO : initiate successful logged in experience
+
+        val pref = getSharedPreferences("login", MODE_PRIVATE)
+        val editor = pref.edit()
+        editor.putBoolean("flag",true)
+        editor.putString("username",displayName)
+        editor.apply()
+
         Toast.makeText(
             applicationContext,
             "$welcome $displayName",
             Toast.LENGTH_LONG
         ).show()
+
+        intent = Intent(this, MainScreen::class.java)
+        startActivity(intent)
     }
 
     private fun showLoginFailed(@StringRes errorString: Int) {

@@ -49,8 +49,17 @@ class MainScreen : AppCompatActivity() {
     }
 
     fun login(view: View) {
-        intent = Intent(this,LoginActivity::class.java)
-        startActivity(intent)
+
+        val pref = getSharedPreferences("login", MODE_PRIVATE)
+        if(pref.getBoolean("flag",false)){
+            //show profile
+            intent = Intent(this,userProfile::class.java)
+            startActivity(intent)
+        }
+        else{
+            intent = Intent(this,LoginActivity::class.java)
+            startActivity(intent)
+        }
     }
 
 //    fun Clicked(view: View) {

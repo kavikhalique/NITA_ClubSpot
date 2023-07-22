@@ -6,4 +6,10 @@
     </style>
 
     <style name="Theme.NITAClubSpot" parent="Base.Theme.NITAClubSpot" />
+    <style name="Theme.NITAClubSpot.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+    <style name="Theme.NITAClubSpot.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="Theme.NITAClubSpot.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>
