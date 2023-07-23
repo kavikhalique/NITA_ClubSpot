@@ -3,6 +3,9 @@ package com.example.nitaclubspot
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Looper
+import android.view.View
+import android.view.animation.AnimationUtils
 import com.example.nitaclubspot.databinding.ActivitySplashScreenBinding
 import com.example.nitaclubspot.ui.login.LoginActivity
 import java.util.logging.Handler
@@ -12,11 +15,13 @@ class splash_screen : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val binding = ActivitySplashScreenBinding.inflate(layoutInflater)
-//        setContentView(binding.root)
+        setContentView(binding.root)
+        supportActionBar?.hide()
 
+        binding.logo.setAnimation(AnimationUtils.loadAnimation(this,R.anim.top_to_bottom))
+        binding.middle.setAnimation(AnimationUtils.loadAnimation(this,R.anim.middle_splash))
 
-        binding.logo.alpha= 0f
-        binding.logo.animate().setDuration(1500).alpha(1f).withEndAction{
+        android.os.Handler(Looper.getMainLooper()).postDelayed({
             val pref = getSharedPreferences("login", MODE_PRIVATE)
             var isloggedin = pref.getBoolean("flag",false)
 
@@ -28,6 +33,7 @@ class splash_screen : AppCompatActivity() {
                 intent = Intent(this,LoginActivity::class.java)
                 startActivity(intent)
             }
-        }
+            finish()
+        }, 3000)
     }
 }

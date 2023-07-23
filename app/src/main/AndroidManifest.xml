@@ -32,7 +32,8 @@
 
         </activity>
         <activity android:name="com.example.nitaclubspot.userProfile" />
-        <activity android:name="com.example.nitaclubspot.user_signup"
+        <activity android:name="com.example.nitaclubspot.user_signup" />
+        <activity android:name="com.example.nitaclubspot.splash_screen"
             android:exported="true"
             >
             <intent-filter>
@@ -41,7 +42,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.example.nitaclubspot.splash_screen" />
     </application>
 
 </manifest>

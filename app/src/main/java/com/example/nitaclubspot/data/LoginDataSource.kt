@@ -13,7 +13,7 @@ class LoginDataSource {
             // TODO: handle loggedInUser authentication
 
             if(username=="kavikhalique"&& password=="admin123") {
-                val papa = LoggedInUser("8u8bjnb","Kavi Khalique")
+                val papa = LoggedInUser("8u8bjnb","Kavi Khalique","abc@xyz.com")
                 return Result.Success(papa)
             }
 

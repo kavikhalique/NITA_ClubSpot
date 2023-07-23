@@ -3,9 +3,52 @@
     <style name="Base.Theme.NITAClubSpot" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+         <item name="colorPrimaryVariant">@color/sky_blue</item>
+        <item name="colorOnPrimary">#ffffff</item>
+         <item name="colorSecondary">@color/violet</item>
+        <item name="colorSecondaryVariant">@color/violet</item>
+        <item name="colorOnSecondary">#ffffff</item>
+        <item name="colorSurface">#ffffff</item>
+        <item name="colorOnSurface">#000000</item>
+        <item name="colorError">#B00020</item>
+        <item name="colorOnError">#ffffff</item>
+        <item name="android:statusBarColor">@color/sky_blue</item>
+        <item name="android:navigationBarColor">@color/sky_blue</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
+
     </style>
 
     <style name="Theme.NITAClubSpot" parent="Base.Theme.NITAClubSpot" />
+    <style name="Theme.NITAClubSpot.Light" parent="Base.Theme.NITAClubSpot" />
+    <style name="Theme.NITAClubSpot.Dark" parent="Base.Theme.NITAClubSpot" />
+    <style name="Theme.NITAClubSpot.Light.NoActionBar" parent="Theme.NITAClubSpot.Light">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+    <style name="Theme.NITAClubSpot.Dark.NoActionBar" parent="Theme.NITAClubSpot.Dark">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+    <style name="Theme.NITAClubSpot.Light.DarkActionBar" parent="Theme.NITAClubSpot.Light">
+        <item name="windowActionBar">true</item>
+        <item name="windowNoTitle">false</item>
+    </style>
+    <style name="Theme.NITAClubSpot.Dark.DarkActionBar" parent="Theme.NITAClubSpot.Dark">
+        <item name="windowActionBar">true</item>
+        <item name="windowNoTitle">false</item>
+    </style>
+    <style name="Theme.NITAClubSpot.Light.NoActionBar.FullScreen" parent="Theme.NITAClubSpot.Light.NoActionBar">
+        <item name="android:windowFullscreen">true</item>
+    </style>
+    <style name="Theme.NITAClubSpot.Dark.NoActionBar.FullScreen" parent="Theme.NITAClubSpot.Dark.NoActionBar">
+        <item name="android:windowFullscreen">true</item>
+    </style>
+    <style name="Theme.NITAClubSpot.Light.DarkActionBar.FullScreen" parent="Theme.NITAClubSpot.Light.DarkActionBar">
+        <item name="android:windowFullscreen">true</item>
+    </style>
+    <style name="Theme.NITAClubSpot.Dark.DarkActionBar.FullScreen" parent="Theme.NITAClubSpot.Dark.DarkActionBar">
+        <item name="android:windowFullscreen">true</item>
+    </style>
     <style name="Theme.NITAClubSpot.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
