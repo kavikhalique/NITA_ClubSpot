@@ -15,6 +15,12 @@
         android:theme="@style/Theme.NITAClubSpot"
         tools:targetApi="31">
         <activity
+            android:name=".BasicDetailsAfterOneTapLogin"
+            android:exported="false" />
+        <activity
+            android:name=".BasicDetailsInput"
+            android:exported="false" />
+        <activity
             android:name=".ui.login.LoginActivity"
             android:exported="false"
             android:label="@string/title_activity_login" />
@@ -28,14 +34,12 @@
         <!-- android:exported="false" /> -->
         <activity
             android:name=".MainScreen"
-            android:exported="false">
-
-        </activity>
-        <activity android:name="com.example.nitaclubspot.userProfile" />
-        <activity android:name="com.example.nitaclubspot.user_signup" />
-        <activity android:name="com.example.nitaclubspot.splash_screen"
-            android:exported="true"
-            >
+            android:exported="false" />
+        <activity android:name=".userProfile" />
+        <activity android:name=".user_signup" />
+        <activity
+            android:name=".splash_screen"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

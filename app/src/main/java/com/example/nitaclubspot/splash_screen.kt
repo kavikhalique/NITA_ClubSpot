@@ -8,6 +8,8 @@ import android.view.View
 import android.view.animation.AnimationUtils
 import com.example.nitaclubspot.databinding.ActivitySplashScreenBinding
 import com.example.nitaclubspot.ui.login.LoginActivity
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.ktx.Firebase
 import java.util.logging.Handler
 import java.util.logging.LogRecord
 
@@ -23,9 +25,11 @@ class splash_screen : AppCompatActivity() {
 
         android.os.Handler(Looper.getMainLooper()).postDelayed({
             val pref = getSharedPreferences("login", MODE_PRIVATE)
-            var isloggedin = pref.getBoolean("flag",false)
+//            val isloggedin = pref.getBoolean("flag",false)
 
-            if(isloggedin){
+            val person= FirebaseAuth.getInstance().currentUser
+
+            if(person!=null){
                 intent = Intent(this,MainScreen::class.java)
                 startActivity(intent)
             }

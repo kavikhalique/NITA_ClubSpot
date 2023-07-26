@@ -5,6 +5,13 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import com.example.nitaclubspot.databinding.UserProfileBinding
 import com.example.nitaclubspot.ui.login.LoginActivity
+import com.google.android.gms.auth.api.Auth
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 class userProfile : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -15,15 +22,22 @@ class userProfile : AppCompatActivity() {
         val pref = getSharedPreferences("login", MODE_PRIVATE)
         val username=pref.getString("username",null)
 
-        if(username!=null){
-            binding.username.text=username
+        if(Firebase.auth.currentUser?.displayName!=null){
+            binding.username.text= Firebase.auth.currentUser?.displayName
         }
         else binding.username.text="user"
 
         binding.logout.setOnClickListener(){
             val editor = pref.edit()
             editor.putBoolean("flag",false)
+            editor.putString("username",null)
             editor.apply()
+
+            //firebase logout
+            Firebase.auth.signOut()
+
+            //google logout
+            GoogleSignIn.getClient(this, GoogleSignInOptions.DEFAULT_SIGN_IN).signOut()
 
             finish()
 

@@ -8,6 +8,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.example.nitaclubspot.databinding.MainscreenBinding
 import com.example.nitaclubspot.ui.login.LoginActivity
 import com.google.android.material.tabs.TabLayout
+import com.google.firebase.auth.FirebaseAuth
 
 class MainScreen : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,13 +51,15 @@ class MainScreen : AppCompatActivity() {
 
     fun login(view: View) {
 
-        val pref = getSharedPreferences("login", MODE_PRIVATE)
-        if(pref.getBoolean("flag",false)){
+//        val pref = getSharedPreferences("login", MODE_PRIVATE)
+        val person= FirebaseAuth.getInstance().currentUser
+        if(person!=null){
             //show profile
             intent = Intent(this,userProfile::class.java)
             startActivity(intent)
         }
         else{
+            //show login
             intent = Intent(this,LoginActivity::class.java)
             startActivity(intent)
         }
