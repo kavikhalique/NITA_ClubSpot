@@ -1,0 +1,833 @@
+Index: app/src/main/java/com/example/nitaclubspot/ui/login/LoginActivity.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.nitaclubspot.ui.login\r\n\r\nimport android.app.Activity\r\nimport androidx.lifecycle.Observer\r\nimport androidx.lifecycle.ViewModelProvider\r\nimport android.os.Bundle\r\nimport androidx.annotation.StringRes\r\nimport androidx.appcompat.app.AppCompatActivity\r\nimport android.text.Editable\r\nimport android.text.TextWatcher\r\nimport android.view.View\r\nimport android.view.inputmethod.EditorInfo\r\nimport android.widget.EditText\r\nimport android.widget.Toast\r\nimport com.example.nitaclubspot.databinding.ActivityLoginBinding\r\n\r\nimport com.example.nitaclubspot.R\r\n\r\nclass LoginActivity : AppCompatActivity() {\r\n\r\n    private lateinit var loginViewModel: LoginViewModel\r\n    private lateinit var binding: ActivityLoginBinding\r\n\r\n    override fun onCreate(savedInstanceState: Bundle?) {\r\n        super.onCreate(savedInstanceState)\r\n\r\n        binding = ActivityLoginBinding.inflate(layoutInflater)\r\n        setContentView(binding.root)\r\n\r\n        val username = binding.username\r\n        val password = binding.password\r\n        val login = binding.login\r\n        val loading = binding.loading\r\n\r\n        loginViewModel = ViewModelProvider(this, LoginViewModelFactory())\r\n            .get(LoginViewModel::class.java)\r\n\r\n        loginViewModel.loginFormState.observe(this@LoginActivity, Observer {\r\n            val loginState = it ?: return@Observer\r\n\r\n            // disable login button unless both username / password is valid\r\n            login.isEnabled = loginState.isDataValid\r\n\r\n            if (loginState.usernameError != null) {\r\n                username.error = getString(loginState.usernameError)\r\n            }\r\n            if (loginState.passwordError != null) {\r\n                password.error = getString(loginState.passwordError)\r\n            }\r\n        })\r\n\r\n        loginViewModel.loginResult.observe(this@LoginActivity, Observer {\r\n            val loginResult = it ?: return@Observer\r\n\r\n            loading.visibility = View.GONE\r\n            if (loginResult.error != null) {\r\n                showLoginFailed(loginResult.error)\r\n            }\r\n            if (loginResult.success != null) {\r\n                updateUiWithUser(loginResult.success)\r\n            }\r\n            setResult(Activity.RESULT_OK)\r\n\r\n            //Complete and destroy login activity once successful\r\n            finish()\r\n        })\r\n\r\n        username.afterTextChanged {\r\n            loginViewModel.loginDataChanged(\r\n                username.text.toString(),\r\n                password.text.toString()\r\n            )\r\n        }\r\n\r\n        password.apply {\r\n            afterTextChanged {\r\n                loginViewModel.loginDataChanged(\r\n                    username.text.toString(),\r\n                    password.text.toString()\r\n                )\r\n            }\r\n\r\n            setOnEditorActionListener { _, actionId, _ ->\r\n                when (actionId) {\r\n                    EditorInfo.IME_ACTION_DONE ->\r\n                        loginViewModel.login(\r\n                            username.text.toString(),\r\n                            password.text.toString()\r\n                        )\r\n                }\r\n                false\r\n            }\r\n\r\n            login.setOnClickListener {\r\n                loading.visibility = View.VISIBLE\r\n                loginViewModel.login(username.text.toString(), password.text.toString())\r\n            }\r\n        }\r\n    }\r\n\r\n    private fun updateUiWithUser(model: LoggedInUserView) {\r\n        val welcome = getString(R.string.welcome)\r\n        val displayName = model.displayName\r\n        // TODO : initiate successful logged in experience\r\n        Toast.makeText(\r\n            applicationContext,\r\n            \"$welcome $displayName\",\r\n            Toast.LENGTH_LONG\r\n        ).show()\r\n    }\r\n\r\n    private fun showLoginFailed(@StringRes errorString: Int) {\r\n        Toast.makeText(applicationContext, errorString, Toast.LENGTH_SHORT).show()\r\n    }\r\n}\r\n\r\n/**\r\n * Extension function to simplify setting an afterTextChanged action to EditText components.\r\n */\r\nfun EditText.afterTextChanged(afterTextChanged: (String) -> Unit) {\r\n    this.addTextChangedListener(object : TextWatcher {\r\n        override fun afterTextChanged(editable: Editable?) {\r\n            afterTextChanged.invoke(editable.toString())\r\n        }\r\n\r\n        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}\r\n\r\n        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}\r\n    })\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/nitaclubspot/ui/login/LoginActivity.kt b/app/src/main/java/com/example/nitaclubspot/ui/login/LoginActivity.kt
+--- a/app/src/main/java/com/example/nitaclubspot/ui/login/LoginActivity.kt	(revision 49397d3d25e504366ce6b826de1fca9cfc64217b)
++++ b/app/src/main/java/com/example/nitaclubspot/ui/login/LoginActivity.kt	(date 1690035788815)
+@@ -1,6 +1,8 @@
+ package com.example.nitaclubspot.ui.login
+ 
+ import android.app.Activity
++import android.content.Intent
++import android.content.SharedPreferences
+ import androidx.lifecycle.Observer
+ import androidx.lifecycle.ViewModelProvider
+ import android.os.Bundle
+@@ -12,6 +14,7 @@
+ import android.view.inputmethod.EditorInfo
+ import android.widget.EditText
+ import android.widget.Toast
++import com.example.nitaclubspot.MainScreen
+ import com.example.nitaclubspot.databinding.ActivityLoginBinding
+ 
+ import com.example.nitaclubspot.R
+@@ -49,6 +52,8 @@
+             }
+         })
+ 
++        //it continuously observes the viemodel and as login results
++        // gets inserted into LoginResult it performs further actions
+         loginViewModel.loginResult.observe(this@LoginActivity, Observer {
+             val loginResult = it ?: return@Observer
+ 
+@@ -58,11 +63,13 @@
+             }
+             if (loginResult.success != null) {
+                 updateUiWithUser(loginResult.success)
+-            }
+-            setResult(Activity.RESULT_OK)
++
++                setResult(Activity.RESULT_OK)
+ 
+-            //Complete and destroy login activity once successful
+-            finish()
++                //Complete and destroy login activity once successful
++
++                finish()
++            }
+         })
+ 
+         username.afterTextChanged {
+@@ -92,6 +99,7 @@
+             }
+ 
+             login.setOnClickListener {
++
+                 loading.visibility = View.VISIBLE
+                 loginViewModel.login(username.text.toString(), password.text.toString())
+             }
+@@ -102,11 +110,21 @@
+         val welcome = getString(R.string.welcome)
+         val displayName = model.displayName
+         // TODO : initiate successful logged in experience
++
++        val pref = getSharedPreferences("login", MODE_PRIVATE)
++        val editor = pref.edit()
++        editor.putBoolean("flag",true)
++        editor.putString("username",displayName)
++        editor.apply()
++
+         Toast.makeText(
+             applicationContext,
+             "$welcome $displayName",
+             Toast.LENGTH_LONG
+         ).show()
++
++        intent = Intent(this, MainScreen::class.java)
++        startActivity(intent)
+     }
+ 
+     private fun showLoginFailed(@StringRes errorString: Int) {
+Index: app/src/main/java/com/example/nitaclubspot/RV_Events_adap.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.nitaclubspot\r\n\r\nimport android.content.Context\r\nimport android.content.Intent\r\nimport android.os.Bundle\r\nimport android.view.LayoutInflater\r\nimport android.view.View\r\nimport android.view.ViewGroup\r\nimport androidx.core.content.ContextCompat.startActivity\r\nimport androidx.recyclerview.widget.RecyclerView\r\nimport com.example.nitaclubspot.databinding.RvEventsRowsBinding\r\nclass RV_Events_adap(val context: Context): RecyclerView.Adapter<RV_Events_adap.ViewHolder>() {\r\n\r\n    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {\r\n\r\n        val binding= RvEventsRowsBinding.bind(itemView)\r\n\r\n        val heading= binding.heading\r\n        val content= binding.content\r\n        val view= itemView\r\n    }\r\n\r\n    var eventsdata : ArrayList<EventsData> = ArrayList()\r\n\r\n    fun add(heading:String,content:String){\r\n        eventsdata.add(EventsData(heading,content))\r\n    }\r\n\r\n    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {\r\n        return ViewHolder(LayoutInflater.from(context).inflate(R.layout.rv_events_rows,parent,false))\r\n    }\r\n\r\n    override fun getItemCount(): Int {\r\n        return eventsdata.size\r\n    }\r\n\r\n    override fun onBindViewHolder(holder: ViewHolder, position: Int) {\r\n        holder.heading.text = eventsdata[position].Header\r\n        holder.content.text = eventsdata[position].Dscrp\r\n\r\n        holder.view.setOnClickListener(){\r\n            val intent = Intent(context,EventDetails::class.java)\r\n            intent.putExtra(\"Key\",eventsdata[position].Header)\r\n            intent.putExtra(\"Key2\",eventsdata[position].Dscrp)\r\n            startActivity(context,intent, Bundle())\r\n        }\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/nitaclubspot/RV_Events_adap.kt b/app/src/main/java/com/example/nitaclubspot/RV_Events_adap.kt
+--- a/app/src/main/java/com/example/nitaclubspot/RV_Events_adap.kt	(revision 49397d3d25e504366ce6b826de1fca9cfc64217b)
++++ b/app/src/main/java/com/example/nitaclubspot/RV_Events_adap.kt	(date 1690018745845)
+@@ -14,6 +14,10 @@
+     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+ 
+         val binding= RvEventsRowsBinding.bind(itemView)
++        val up_button = binding.upbutton
++        val down_button = binding.downbutton
++        var up_state=false
++        var down_state=false
+ 
+         val heading= binding.heading
+         val content= binding.content
+@@ -44,5 +48,42 @@
+             intent.putExtra("Key2",eventsdata[position].Dscrp)
+             startActivity(context,intent, Bundle())
+         }
++
++        holder.up_button.setOnClickListener(){
++            // if button has aready been clicked then disable it
++            if(holder.up_state){
++                holder.up_state=false
++                holder.up_button.setImageResource(R.drawable.arrow_up_grey)
++            }
++            // if button was not clicked before then enable it
++            else{
++                holder.up_state=true
++                holder.up_button.setImageResource(R.drawable.arrow_up_green)
++            }
++            // if another button is enabled then disable it
++            if(holder.down_state){
++                holder.down_button.setImageResource(R.drawable.arrow_down_grey)
++                holder.down_state=false
++            }
++        }
++
++        holder.down_button.setOnClickListener(){
++            // if button has aready been clicked then disable it
++            if(holder.down_state){
++                holder.down_button.setImageResource(R.drawable.arrow_down_grey)
++                holder.down_state=false
++            }
++            // if button was not clicked before then enable it
++            else{
++                holder.down_state=true
++                holder.down_button.setImageResource(R.drawable.arrow_down_red)
++
++            }
++            // if another button is enabled then disable it
++            if(holder.up_state){
++                holder.up_state=false
++                holder.up_button.setImageResource(R.drawable.arrow_up_grey)
++            }
++        }
+     }
+ }
+\ No newline at end of file
+Index: app/src/main/AndroidManifest.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\r\n    xmlns:tools=\"http://schemas.android.com/tools\">\r\n\r\n    <uses-permission android:name=\"android.permission.INTERNET\" />\r\n\r\n    <application\r\n        android:allowBackup=\"true\"\r\n        android:dataExtractionRules=\"@xml/data_extraction_rules\"\r\n        android:fullBackupContent=\"@xml/backup_rules\"\r\n        android:icon=\"@mipmap/ic_launcher\"\r\n        android:label=\"@string/app_name\"\r\n        android:roundIcon=\"@mipmap/ic_launcher_round\"\r\n        android:supportsRtl=\"true\"\r\n        android:theme=\"@style/Theme.NITAClubSpot\"\r\n        tools:targetApi=\"31\">\r\n        <activity\r\n            android:name=\".ui.login.LoginActivity\"\r\n            android:exported=\"false\"\r\n            android:label=\"@string/title_activity_login\" />\r\n        <activity\r\n            android:name=\".EventDetails\"\r\n            android:exported=\"false\" />\r\n        <activity\r\n            android:name=\".ClubDetails\"\r\n            android:exported=\"false\" /> <!-- <activity -->\r\n        <!-- android:name=\".MainScreen\" -->\r\n        <!-- android:exported=\"false\" /> -->\r\n        <activity\r\n            android:name=\".MainScreen\"\r\n            android:exported=\"true\">\r\n            <intent-filter>\r\n                <action android:name=\"android.intent.action.MAIN\" />\r\n\r\n                <category android:name=\"android.intent.category.LAUNCHER\" />\r\n            </intent-filter>\r\n        </activity>\r\n    </application>\r\n\r\n</manifest>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+--- a/app/src/main/AndroidManifest.xml	(revision 49397d3d25e504366ce6b826de1fca9cfc64217b)
++++ b/app/src/main/AndroidManifest.xml	(date 1690054039865)
+@@ -15,6 +15,29 @@
+         android:theme="@style/Theme.NITAClubSpot"
+         tools:targetApi="31">
+         <activity
++            android:name=".user_signup"
++            android:exported="false" />
++        <activity
++            android:name=".signup_form"
++            android:exported="true"
++            android:label="@string/title_activity_signup_form"
++            android:resizeableActivity="true"
++            android:theme="@style/Theme.NITAClubSpot.NoActionBar"
++            tools:targetApi="24" >
++
++            <intent-filter>
++                <action android:name="android.intent.action.MAIN" />
++
++                <category android:name="android.intent.category.LAUNCHER" />
++            </intent-filter>
++        </activity>
++        <activity
++            android:name=".userProfile"
++            android:exported="false" />
++        <activity
++            android:name=".MainScreen"
++            android:exported="false" />
++        <activity
+             android:name=".ui.login.LoginActivity"
+             android:exported="false"
+             android:label="@string/title_activity_login" />
+@@ -27,13 +50,9 @@
+         <!-- android:name=".MainScreen" -->
+         <!-- android:exported="false" /> -->
+         <activity
+-            android:name=".MainScreen"
+-            android:exported="true">
+-            <intent-filter>
+-                <action android:name="android.intent.action.MAIN" />
++            android:name=".splash_screen"
++            android:exported="false">
+ 
+-                <category android:name="android.intent.category.LAUNCHER" />
+-            </intent-filter>
+         </activity>
+     </application>
+ 
+Index: app/src/main/java/com/example/nitaclubspot/splash_screen.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/nitaclubspot/splash_screen.kt b/app/src/main/java/com/example/nitaclubspot/splash_screen.kt
+new file mode 100644
+--- /dev/null	(date 1690027295550)
++++ b/app/src/main/java/com/example/nitaclubspot/splash_screen.kt	(date 1690027295550)
+@@ -0,0 +1,32 @@
++package com.example.nitaclubspot
++
++import android.content.Intent
++import androidx.appcompat.app.AppCompatActivity
++import android.os.Bundle
++import com.example.nitaclubspot.databinding.ActivitySplashScreenBinding
++import com.example.nitaclubspot.ui.login.LoginActivity
++import java.util.logging.Handler
++import java.util.logging.LogRecord
++
++class splash_screen : AppCompatActivity() {
++    override fun onCreate(savedInstanceState: Bundle?) {
++        super.onCreate(savedInstanceState)
++        val binding = ActivitySplashScreenBinding.inflate(layoutInflater)
++        setContentView(binding.root)
++
++        binding.logo.alpha= 0f
++        binding.logo.animate().setDuration(1500).alpha(1f).withEndAction{
++            val pref = getSharedPreferences("login", MODE_PRIVATE)
++            var isloggedin = pref.getBoolean("flag",false)
++
++            if(isloggedin){
++                intent = Intent(this,MainScreen::class.java)
++                startActivity(intent)
++            }
++            else{
++                intent = Intent(this,LoginActivity::class.java)
++                startActivity(intent)
++            }
++        }
++    }
++}
+\ No newline at end of file
+Index: app/src/main/res/layout/activity_login.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<androidx.constraintlayout.widget.ConstraintLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\r\n    xmlns:app=\"http://schemas.android.com/apk/res-auto\"\r\n    xmlns:tools=\"http://schemas.android.com/tools\"\r\n    android:id=\"@+id/container\"\r\n    android:layout_width=\"match_parent\"\r\n    android:layout_height=\"match_parent\"\r\n    android:paddingLeft=\"@dimen/activity_horizontal_margin\"\r\n    android:paddingTop=\"@dimen/activity_vertical_margin\"\r\n    android:paddingRight=\"@dimen/activity_horizontal_margin\"\r\n    android:paddingBottom=\"@dimen/activity_vertical_margin\"\r\n    tools:context=\".ui.login.LoginActivity\">\r\n\r\n    <EditText\r\n        android:id=\"@+id/username\"\r\n        android:layout_width=\"0dp\"\r\n        android:layout_height=\"wrap_content\"\r\n        android:layout_marginTop=\"96dp\"\r\n        android:hint=\"@string/prompt_email\"\r\n        android:inputType=\"textEmailAddress\"\r\n        android:selectAllOnFocus=\"true\"\r\n        app:layout_constraintEnd_toEndOf=\"parent\"\r\n        app:layout_constraintStart_toStartOf=\"parent\"\r\n        app:layout_constraintTop_toTopOf=\"parent\" />\r\n\r\n    <EditText\r\n        android:id=\"@+id/password\"\r\n        android:layout_width=\"0dp\"\r\n        android:layout_height=\"wrap_content\"\r\n        android:layout_marginTop=\"8dp\"\r\n        android:hint=\"@string/prompt_password\"\r\n        android:imeActionLabel=\"@string/action_sign_in_short\"\r\n        android:imeOptions=\"actionDone\"\r\n        android:inputType=\"textPassword\"\r\n        android:selectAllOnFocus=\"true\"\r\n        app:layout_constraintEnd_toEndOf=\"parent\"\r\n        app:layout_constraintStart_toStartOf=\"parent\"\r\n        app:layout_constraintTop_toBottomOf=\"@+id/username\" />\r\n\r\n    <Button\r\n        android:id=\"@+id/login\"\r\n        android:layout_width=\"wrap_content\"\r\n        android:layout_height=\"wrap_content\"\r\n        android:layout_gravity=\"start\"\r\n        android:layout_marginTop=\"16dp\"\r\n        android:layout_marginBottom=\"64dp\"\r\n        android:enabled=\"false\"\r\n        android:text=\"@string/action_sign_in\"\r\n        app:layout_constraintBottom_toBottomOf=\"parent\"\r\n        app:layout_constraintEnd_toEndOf=\"parent\"\r\n        app:layout_constraintStart_toStartOf=\"parent\"\r\n        app:layout_constraintTop_toBottomOf=\"@+id/password\"\r\n        app:layout_constraintVertical_bias=\"0.2\" />\r\n\r\n    <ProgressBar\r\n        android:id=\"@+id/loading\"\r\n        android:layout_width=\"wrap_content\"\r\n        android:layout_height=\"wrap_content\"\r\n        android:layout_gravity=\"center\"\r\n        android:layout_marginTop=\"64dp\"\r\n        android:layout_marginBottom=\"64dp\"\r\n        android:visibility=\"gone\"\r\n        app:layout_constraintBottom_toBottomOf=\"parent\"\r\n        app:layout_constraintEnd_toEndOf=\"@+id/password\"\r\n        app:layout_constraintStart_toStartOf=\"@+id/password\"\r\n        app:layout_constraintTop_toTopOf=\"parent\"\r\n        app:layout_constraintVertical_bias=\"0.3\" />\r\n\r\n</androidx.constraintlayout.widget.ConstraintLayout>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/layout/activity_login.xml b/app/src/main/res/layout/activity_login.xml
+--- a/app/src/main/res/layout/activity_login.xml	(revision 49397d3d25e504366ce6b826de1fca9cfc64217b)
++++ b/app/src/main/res/layout/activity_login.xml	(date 1690053769587)
+@@ -54,8 +54,8 @@
+ 
+     <ProgressBar
+         android:id="@+id/loading"
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
++        android:layout_width="59dp"
++        android:layout_height="48dp"
+         android:layout_gravity="center"
+         android:layout_marginTop="64dp"
+         android:layout_marginBottom="64dp"
+Index: app/src/main/res/values-w936dp/dimens.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/values-w936dp/dimens.xml b/app/src/main/res/values-w936dp/dimens.xml
+new file mode 100644
+--- /dev/null	(date 1690048781034)
++++ b/app/src/main/res/values-w936dp/dimens.xml	(date 1690048781034)
+@@ -0,0 +1,3 @@
++<resources>
++    <dimen name="item_transform_image_length">160dp</dimen>
++</resources>
+\ No newline at end of file
+Index: app/src/main/res/values/themes.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><resources xmlns:tools=\"http://schemas.android.com/tools\">\r\n    <!-- Base application theme. -->\r\n    <style name=\"Base.Theme.NITAClubSpot\" parent=\"Theme.Material3.DayNight.NoActionBar\">\r\n        <!-- Customize your light theme here. -->\r\n        <!-- <item name=\"colorPrimary\">@color/my_light_primary</item> -->\r\n    </style>\r\n\r\n    <style name=\"Theme.NITAClubSpot\" parent=\"Base.Theme.NITAClubSpot\" />\r\n</resources>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/values/themes.xml b/app/src/main/res/values/themes.xml
+--- a/app/src/main/res/values/themes.xml	(revision 49397d3d25e504366ce6b826de1fca9cfc64217b)
++++ b/app/src/main/res/values/themes.xml	(date 1690048912013)
+@@ -6,4 +6,10 @@
+     </style>
+ 
+     <style name="Theme.NITAClubSpot" parent="Base.Theme.NITAClubSpot" />
++    <style name="Theme.NITAClubSpot.NoActionBar">
++        <item name="windowActionBar">false</item>
++        <item name="windowNoTitle">true</item>
++    </style>
++    <style name="Theme.NITAClubSpot.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
++    <style name="Theme.NITAClubSpot.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+ </resources>
+\ No newline at end of file
+Index: app/src/main/res/layout/activity_user_signup.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/layout/activity_user_signup.xml b/app/src/main/res/layout/activity_user_signup.xml
+new file mode 100644
+--- /dev/null	(date 1690052434821)
++++ b/app/src/main/res/layout/activity_user_signup.xml	(date 1690052434821)
+@@ -0,0 +1,148 @@
++<?xml version="1.0" encoding="utf-8"?>
++<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    tools:context=".user_signup">
++
++    <EditText
++        android:id="@+id/firstname"
++        android:layout_width="0dp"
++        android:layout_height="wrap_content"
++        android:layout_marginHorizontal="20dp"
++        android:ems="10"
++        android:inputType="text"
++        android:textColor="#7C7C7C"
++        android:text="First Name"
++        android:layout_marginVertical="30dp"
++        app:layout_constraintBottom_toTopOf="@+id/phone"
++        app:layout_constraintEnd_toStartOf="@+id/guideline2"
++        app:layout_constraintHorizontal_bias="0.519"
++        app:layout_constraintStart_toStartOf="parent" />
++
++    <androidx.constraintlayout.widget.Guideline
++        android:id="@+id/guideline2"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:orientation="vertical"
++        app:layout_constraintGuide_percent="0.5" />
++
++    <EditText
++        android:id="@+id/lastname"
++        android:layout_width="0dp"
++        android:layout_height="wrap_content"
++        android:ems="10"
++        android:layout_marginHorizontal="20dp"
++        android:textColor="#7C7C7C"
++        android:inputType="text"
++        android:text="Last Name"
++        android:layout_marginVertical="30dp"
++        app:layout_constraintBottom_toTopOf="@+id/phone"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.448"
++        app:layout_constraintStart_toStartOf="@+id/guideline2" />
++
++    <EditText
++        android:id="@+id/phone"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:text="Phone No. (optional)"
++        android:textColor="#7C7C7C"
++        android:ems="10"
++        android:layout_marginVertical="30dp"
++        android:inputType="phone"
++        app:layout_constraintBottom_toTopOf="@+id/emailid"
++        app:layout_constraintStart_toStartOf="@+id/guideline3" />
++
++    <androidx.constraintlayout.widget.Guideline
++        android:id="@+id/guideline3"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:orientation="vertical"
++        app:layout_constraintGuide_begin="20dp" />
++
++    <EditText
++        android:id="@+id/emailid"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:ems="10"
++        android:inputType="textEmailAddress"
++        android:text="Email id"
++        android:layout_marginVertical="30dp"
++        android:textColor="#7C7C7C"
++        app:layout_constraintBottom_toTopOf="@+id/third_year"
++        app:layout_constraintStart_toStartOf="@+id/guideline3" />
++
++    <Button
++        android:id="@+id/fourth_year"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:text="2024"
++        android:layout_marginHorizontal="2dp"
++        android:layout_marginVertical="30dp"
++        app:cornerRadius="2dp"
++        app:layout_constraintBottom_toTopOf="@+id/guideline4"
++        app:layout_constraintStart_toStartOf="@+id/guideline3" />
++
++    <Button
++        android:id="@+id/third_year"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:layout_marginHorizontal="2dp"
++        android:text="2025"
++        app:cornerRadius="2dp"
++        android:layout_marginVertical="30dp"
++        app:layout_constraintBottom_toTopOf="@+id/guideline4"
++        app:layout_constraintStart_toEndOf="@+id/fourth_year" />
++
++    <Button
++        android:id="@+id/second_year"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:layout_marginHorizontal="2dp"
++        android:text="2026"
++        android:layout_marginVertical="30dp"
++        app:cornerRadius="2dp"
++        app:layout_constraintBottom_toTopOf="@+id/guideline4"
++        app:layout_constraintStart_toEndOf="@+id/third_year" />
++
++    <Button
++        android:id="@+id/first_year"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:text="2027"
++        android:layout_marginHorizontal="2dp"
++        app:cornerRadius="2dp"
++        android:layout_marginVertical="30dp"
++        app:layout_constraintBottom_toTopOf="@+id/guideline4"
++        app:layout_constraintStart_toEndOf="@+id/second_year" />
++
++    <Button
++        android:id="@+id/verify"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:text="Verify"
++        android:layout_marginVertical="30dp"
++        app:cornerRadius="2dp"
++        app:layout_constraintBottom_toTopOf="@+id/second_year"
++        app:layout_constraintStart_toEndOf="@+id/emailid" />
++
++    <androidx.constraintlayout.widget.Guideline
++        android:id="@+id/guideline4"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:orientation="horizontal"
++        app:layout_constraintGuide_percent="0.8" />
++
++    <Button
++        android:id="@+id/submit"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:text="Submit"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="@+id/guideline4" />
++
++</androidx.constraintlayout.widget.ConstraintLayout>
+\ No newline at end of file
+Index: app/src/main/java/com/example/nitaclubspot/user_signup.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/nitaclubspot/user_signup.kt b/app/src/main/java/com/example/nitaclubspot/user_signup.kt
+new file mode 100644
+--- /dev/null	(date 1690053819262)
++++ b/app/src/main/java/com/example/nitaclubspot/user_signup.kt	(date 1690053819262)
+@@ -0,0 +1,28 @@
++package com.example.nitaclubspot
++
++import androidx.appcompat.app.AppCompatActivity
++import android.os.Bundle
++import android.text.Editable
++import android.text.TextWatcher
++import android.widget.EditText
++import com.example.nitaclubspot.databinding.ActivityUserSignupBinding
++import com.example.nitaclubspot.ui.login.afterTextChanged
++
++class user_signup : AppCompatActivity() {
++    override fun onCreate(savedInstanceState: Bundle?) {
++        super.onCreate(savedInstanceState)
++        val binding = ActivityUserSignupBinding.inflate(layoutInflater)
++        setContentView(binding.root)
++
++        binding.firstname.afterTextChanged {
++            val firstname= binding.firstname.text.toString()
++            if(!onlyalpha(firstname)){
++                binding.firstname.error = "Only alphabets are allowed"
++            }
++        }
++    }
++
++    private fun onlyalpha(s: String): Boolean{
++        return (s!=null)&& s.matches("^[a-zA-Z]*$".toRegex())
++    }
++}
+Index: app/src/main/java/com/example/nitaclubspot/data/LoginDataSource.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.nitaclubspot.data\r\n\r\nimport com.example.nitaclubspot.data.model.LoggedInUser\r\nimport java.io.IOException\r\n\r\n/**\r\n * Class that handles authentication w/ login credentials and retrieves user information.\r\n */\r\nclass LoginDataSource {\r\n\r\n    fun login(username: String, password: String): Result<LoggedInUser> {\r\n        try {\r\n            // TODO: handle loggedInUser authentication\r\n            val fakeUser = LoggedInUser(java.util.UUID.randomUUID().toString(), \"Jane Doe\")\r\n            return Result.Success(fakeUser)\r\n        } catch (e: Throwable) {\r\n            return Result.Error(IOException(\"Error logging in\", e))\r\n        }\r\n    }\r\n\r\n    fun logout() {\r\n        // TODO: revoke authentication\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/nitaclubspot/data/LoginDataSource.kt b/app/src/main/java/com/example/nitaclubspot/data/LoginDataSource.kt
+--- a/app/src/main/java/com/example/nitaclubspot/data/LoginDataSource.kt	(revision 49397d3d25e504366ce6b826de1fca9cfc64217b)
++++ b/app/src/main/java/com/example/nitaclubspot/data/LoginDataSource.kt	(date 1690035483670)
+@@ -11,8 +11,14 @@
+     fun login(username: String, password: String): Result<LoggedInUser> {
+         try {
+             // TODO: handle loggedInUser authentication
+-            val fakeUser = LoggedInUser(java.util.UUID.randomUUID().toString(), "Jane Doe")
+-            return Result.Success(fakeUser)
++
++            if(username=="kavikhalique"&& password=="admin123") {
++                val papa = LoggedInUser("8u8bjnb","Kavi Khalique")
++                return Result.Success(papa)
++            }
++
++//            val fakeUser = LoggedInUser(java.util.UUID.randomUUID().toString(), "Jane Doe")
++            return Result.Error(object: java.lang.Exception(){})
+         } catch (e: Throwable) {
+             return Result.Error(IOException("Error logging in", e))
+         }
+Index: app/src/main/res/values/strings.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><resources>\r\n    <string name=\"app_name\">NITA ClubSpot</string>\r\n    <!-- TODO: Remove or change this placeholder text -->\r\n    <string name=\"hello_blank_fragment\">Hello blank fragment</string>\r\n    <string name=\"clubs\">Clubs</string>\r\n    <string name=\"events\">Events</string>\r\n    <string name=\"title_activity_login\">LoginActivity</string>\r\n    <string name=\"prompt_email\">Email</string>\r\n    <string name=\"prompt_password\">Password</string>\r\n    <string name=\"action_sign_in\">Sign in or register</string>\r\n    <string name=\"action_sign_in_short\">Sign in</string>\r\n    <string name=\"welcome\">\"Welcome !\"</string>\r\n    <string name=\"invalid_username\">Not a valid username</string>\r\n    <string name=\"invalid_password\">Password must be >5 characters</string>\r\n    <string name=\"login_failed\">\"Login failed\"</string>\r\n</resources>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+--- a/app/src/main/res/values/strings.xml	(revision 49397d3d25e504366ce6b826de1fca9cfc64217b)
++++ b/app/src/main/res/values/strings.xml	(date 1690049920749)
+@@ -13,4 +13,27 @@
+     <string name="invalid_username">Not a valid username</string>
+     <string name="invalid_password">Password must be >5 characters</string>
+     <string name="login_failed">"Login failed"</string>
++    <string name="title_activity_signup_form">signup_form</string>
++    <string name="navigation_drawer_open">Open navigation drawer</string>
++    <string name="navigation_drawer_close">Close navigation drawer</string>
++    <string name="nav_header_title">Android Studio</string>
++    <string name="nav_header_subtitle">android.studio@android.com</string>
++    <string name="nav_header_desc">Navigation header</string>
++    <string name="action_settings">Settings</string>
++
++    <string name="menu_transform">Transform</string>
++    <string name="menu_reflow">Reflow</string>
++    <string name="menu_slideshow">Slideshow</string>
++    <string name="menu_settings">Settings</string>
++
++    <string name="lorem_ipsum_title">Lorem Ipsum"</string>
++    <string name="lorem_ipsum">Lorem Ipsum is simply placeholder text of the printing and
++        typesetting industry. Lorem Ipsum has been the industry\'s standard placeholder text ever
++        since the 1500s, when an unknown printer took a galley of type and scrambled it to make a
++        type specimen book"
++    </string>
++    <string name="fab_content_description">Represents a view to invoke an action</string>
++    <string name="image_view_item_transform_content_description">Represents an image view in the
++        item
++    </string>
+ </resources>
+\ No newline at end of file
+Index: app/src/main/java/com/example/nitaclubspot/MainScreen.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.nitaclubspot\r\n\r\nimport android.content.Intent\r\nimport androidx.appcompat.app.AppCompatActivity\r\nimport android.os.Bundle\r\nimport android.view.View\r\nimport androidx.viewpager2.widget.ViewPager2\r\nimport com.example.nitaclubspot.databinding.MainscreenBinding\r\nimport com.example.nitaclubspot.ui.login.LoginActivity\r\nimport com.google.android.material.tabs.TabLayout\r\n\r\nclass MainScreen : AppCompatActivity() {\r\n    override fun onCreate(savedInstanceState: Bundle?) {\r\n        super.onCreate(savedInstanceState)\r\n        val binding = MainscreenBinding.inflate(layoutInflater)\r\n        setContentView(binding.root)\r\n\r\n        val fm=supportFragmentManager\r\n        val adapter = TV_Main_adapter(fm,lifecycle)\r\n        adapter.add(Events())\r\n        adapter.add(Clubs())\r\n        binding.tabs.addTab(binding.tabs.newTab().setText(\"Events\"))\r\n        binding.tabs.addTab(binding.tabs.newTab().setText(\"Clubs\"))\r\n        binding.viewPager.adapter=adapter\r\n\r\n        binding.tabs.addOnTabSelectedListener(object: TabLayout.OnTabSelectedListener{\r\n            override fun onTabSelected(tab: TabLayout.Tab?) {\r\n                if (tab != null) {\r\n                    binding.viewPager.currentItem= tab.position\r\n                }\r\n            }\r\n\r\n            override fun onTabUnselected(tab: TabLayout.Tab?) {\r\n\r\n            }\r\n\r\n            override fun onTabReselected(tab: TabLayout.Tab?) {\r\n\r\n            }\r\n\r\n        })\r\n\r\n        binding.viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback() {\r\n            override fun onPageSelected(position: Int) {\r\n                super.onPageSelected(position)\r\n                binding.tabs.selectTab(binding.tabs.getTabAt(position))\r\n            }\r\n        })\r\n    }\r\n\r\n    fun login(view: View) {\r\n        intent = Intent(this,LoginActivity::class.java)\r\n        startActivity(intent)\r\n    }\r\n\r\n//    fun Clicked(view: View) {\r\n//        Toast.makeText(this,\"From Mainscreen\",Toast.LENGTH_SHORT).show()\r\n//    }\r\n}\r\n\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/nitaclubspot/MainScreen.kt b/app/src/main/java/com/example/nitaclubspot/MainScreen.kt
+--- a/app/src/main/java/com/example/nitaclubspot/MainScreen.kt	(revision 49397d3d25e504366ce6b826de1fca9cfc64217b)
++++ b/app/src/main/java/com/example/nitaclubspot/MainScreen.kt	(date 1690035107993)
+@@ -49,8 +49,17 @@
+     }
+ 
+     fun login(view: View) {
+-        intent = Intent(this,LoginActivity::class.java)
+-        startActivity(intent)
++
++        val pref = getSharedPreferences("login", MODE_PRIVATE)
++        if(pref.getBoolean("flag",false)){
++            //show profile
++            intent = Intent(this,userProfile::class.java)
++            startActivity(intent)
++        }
++        else{
++            intent = Intent(this,LoginActivity::class.java)
++            startActivity(intent)
++        }
+     }
+ 
+ //    fun Clicked(view: View) {
+Index: app/src/main/java/com/example/nitaclubspot/data/LoginRepository.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.nitaclubspot.data\r\n\r\nimport com.example.nitaclubspot.data.model.LoggedInUser\r\n\r\n/**\r\n * Class that requests authentication and user information from the remote data source and\r\n * maintains an in-memory cache of login status and user credentials information.\r\n */\r\n\r\nclass LoginRepository(val dataSource: LoginDataSource) {\r\n\r\n    // in-memory cache of the loggedInUser object\r\n    var user: LoggedInUser? = null\r\n        private set\r\n\r\n    val isLoggedIn: Boolean\r\n        get() = user != null\r\n\r\n    init {\r\n        // If user credentials will be cached in local storage, it is recommended it be encrypted\r\n        // @see https://developer.android.com/training/articles/keystore\r\n        user = null\r\n    }\r\n\r\n    fun logout() {\r\n        user = null\r\n        dataSource.logout()\r\n    }\r\n\r\n    fun login(username: String, password: String): Result<LoggedInUser> {\r\n        // handle login\r\n        val result = dataSource.login(username, password)\r\n\r\n        if (result is Result.Success) {\r\n            setLoggedInUser(result.data)\r\n        }\r\n\r\n        return result\r\n    }\r\n\r\n    private fun setLoggedInUser(loggedInUser: LoggedInUser) {\r\n        this.user = loggedInUser\r\n        // If user credentials will be cached in local storage, it is recommended it be encrypted\r\n        // @see https://developer.android.com/training/articles/keystore\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/nitaclubspot/data/LoginRepository.kt b/app/src/main/java/com/example/nitaclubspot/data/LoginRepository.kt
+--- a/app/src/main/java/com/example/nitaclubspot/data/LoginRepository.kt	(revision 49397d3d25e504366ce6b826de1fca9cfc64217b)
++++ b/app/src/main/java/com/example/nitaclubspot/data/LoginRepository.kt	(date 1690032554173)
+@@ -1,6 +1,9 @@
+ package com.example.nitaclubspot.data
+ 
++import androidx.appcompat.app.AppCompatActivity
++import com.example.nitaclubspot.MainScreen
+ import com.example.nitaclubspot.data.model.LoggedInUser
++import com.example.nitaclubspot.ui.login.LoginActivity
+ 
+ /**
+  * Class that requests authentication and user information from the remote data source and
+@@ -16,11 +19,11 @@
+     val isLoggedIn: Boolean
+         get() = user != null
+ 
+-    init {
+-        // If user credentials will be cached in local storage, it is recommended it be encrypted
+-        // @see https://developer.android.com/training/articles/keystore
+-        user = null
+-    }
++//    init {
++//        // If user credentials will be cached in local storage, it is recommended it be encrypted
++//        // @see https://developer.android.com/training/articles/keystore
++//        user = null
++//    }
+ 
+     fun logout() {
+         user = null
+@@ -40,6 +43,7 @@
+ 
+     private fun setLoggedInUser(loggedInUser: LoggedInUser) {
+         this.user = loggedInUser
++
+         // If user credentials will be cached in local storage, it is recommended it be encrypted
+         // @see https://developer.android.com/training/articles/keystore
+     }
+Index: app/src/main/res/drawable/arrow_up_green.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/drawable/arrow_up_green.xml b/app/src/main/res/drawable/arrow_up_green.xml
+new file mode 100644
+--- /dev/null	(date 1690015213363)
++++ b/app/src/main/res/drawable/arrow_up_green.xml	(date 1690015213363)
+@@ -0,0 +1,5 @@
++<vector android:alpha="0.68" android:height="24dp"
++    android:tint="#00FE37" android:viewportHeight="24"
++    android:viewportWidth="24" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
++    <path android:fillColor="@android:color/white" android:pathData="M7.41,15.41L12,10.83l4.59,4.58L18,14l-6,-6 -6,6 1.41,1.41z"/>
++</vector>
+Index: app/src/main/res/drawable/arrow_down_red.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/drawable/arrow_down_red.xml b/app/src/main/res/drawable/arrow_down_red.xml
+new file mode 100644
+--- /dev/null	(date 1690015163160)
++++ b/app/src/main/res/drawable/arrow_down_red.xml	(date 1690015163160)
+@@ -0,0 +1,5 @@
++<vector android:alpha="0.68" android:height="24dp"
++    android:tint="#FFFF0F0F" android:viewportHeight="24"
++    android:viewportWidth="24" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
++    <path android:fillColor="#FFFFFF" android:pathData="M7.41,8.59L12,13.17l4.59,-4.58L18,10l-6,6 -6,-6 1.41,-1.41z"/>
++</vector>
+Index: app/src/main/res/drawable/arrow_down_grey.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/drawable/arrow_down_grey.xml b/app/src/main/res/drawable/arrow_down_grey.xml
+new file mode 100644
+--- /dev/null	(date 1690014956057)
++++ b/app/src/main/res/drawable/arrow_down_grey.xml	(date 1690014956057)
+@@ -0,0 +1,5 @@
++<vector android:alpha="0.68" android:height="24dp"
++    android:tint="#525252" android:viewportHeight="24"
++    android:viewportWidth="24" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
++    <path android:fillColor="@android:color/white" android:pathData="M7.41,8.59L12,13.17l4.59,-4.58L18,10l-6,6 -6,-6 1.41,-1.41z"/>
++</vector>
+Index: app/src/main/res/drawable/arrow_up_grey.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/drawable/arrow_up_grey.xml b/app/src/main/res/drawable/arrow_up_grey.xml
+new file mode 100644
+--- /dev/null	(date 1690014777789)
++++ b/app/src/main/res/drawable/arrow_up_grey.xml	(date 1690014777789)
+@@ -0,0 +1,5 @@
++<vector android:alpha="0.68" android:height="24dp"
++    android:tint="#525252" android:viewportHeight="24"
++    android:viewportWidth="24" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
++    <path android:fillColor="@android:color/white" android:pathData="M7.41,15.41L12,10.83l4.59,4.58L18,14l-6,-6 -6,6 1.41,1.41z"/>
++</vector>
+Index: app/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>plugins {\r\n    id 'com.android.application'\r\n    id 'org.jetbrains.kotlin.android'\r\n}\r\n\r\nandroid {\r\n    namespace 'com.example.nitaclubspot'\r\n    compileSdk 34\r\n\r\n    buildFeatures {\r\n        viewBinding = true\r\n    }\r\n\r\n    defaultConfig {\r\n        applicationId \"com.example.nitaclubspot\"\r\n        minSdk 24\r\n        targetSdk 34\r\n        versionCode 1\r\n        versionName \"1.0\"\r\n\r\n        testInstrumentationRunner \"androidx.test.runner.AndroidJUnitRunner\"\r\n    }\r\n\r\n    buildTypes {\r\n        release {\r\n            minifyEnabled false\r\n            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'\r\n        }\r\n    }\r\n    compileOptions {\r\n        sourceCompatibility JavaVersion.VERSION_1_8\r\n        targetCompatibility JavaVersion.VERSION_1_8\r\n    }\r\n    kotlinOptions {\r\n        jvmTarget = '1.8'\r\n    }\r\n}\r\n\r\ndependencies {\r\n\r\n    implementation 'androidx.core:core-ktx:1.10.1'\r\n    implementation 'androidx.appcompat:appcompat:1.6.1'\r\n    implementation 'com.google.android.material:material:1.7.0'\r\n    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'\r\n    implementation 'androidx.annotation:annotation:1.6.0'\r\n    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.6.1'\r\n    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1'\r\n    testImplementation 'junit:junit:4.13.2'\r\n    androidTestImplementation 'androidx.test.ext:junit:1.1.5'\r\n    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'\r\n\r\n    implementation(\"androidx.core:core-splashscreen:1.0.1\")\r\n\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/build.gradle b/app/build.gradle
+--- a/app/build.gradle	(revision 49397d3d25e504366ce6b826de1fca9cfc64217b)
++++ b/app/build.gradle	(date 1690048781680)
+@@ -45,6 +45,9 @@
+     implementation 'androidx.annotation:annotation:1.6.0'
+     implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.6.1'
+     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1'
++    implementation 'androidx.recyclerview:recyclerview:1.2.1'
++    implementation 'androidx.navigation:navigation-fragment-ktx:2.6.0'
++    implementation 'androidx.navigation:navigation-ui-ktx:2.6.0'
+     testImplementation 'junit:junit:4.13.2'
+     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+Index: app/src/main/res/values/dimens.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><resources>\r\n    <!-- Default screen margins, per the Android Design guidelines. -->\r\n    <dimen name=\"activity_horizontal_margin\">16dp</dimen>\r\n    <dimen name=\"activity_vertical_margin\">16dp</dimen>\r\n</resources>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/values/dimens.xml b/app/src/main/res/values/dimens.xml
+--- a/app/src/main/res/values/dimens.xml	(revision 49397d3d25e504366ce6b826de1fca9cfc64217b)
++++ b/app/src/main/res/values/dimens.xml	(date 1690048780998)
+@@ -2,4 +2,11 @@
+     <!-- Default screen margins, per the Android Design guidelines. -->
+     <dimen name="activity_horizontal_margin">16dp</dimen>
+     <dimen name="activity_vertical_margin">16dp</dimen>
++    <dimen name="fab_margin">16dp</dimen>
++    <dimen name="fragment_horizontal_margin">16dp</dimen>
++    <dimen name="item_transform_image_length">48dp</dimen>
++    <dimen name="reflow_text_block_max_percent">1</dimen>
++    <dimen name="reflow_text_block_horizontal_gap">8dp</dimen>
++    <dimen name="reflow_text_title_size">22sp</dimen>
++    <dimen name="reflow_text_description_size">13sp</dimen>
+ </resources>
+\ No newline at end of file
+Index: app/src/main/java/com/example/nitaclubspot/userProfile.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/nitaclubspot/userProfile.kt b/app/src/main/java/com/example/nitaclubspot/userProfile.kt
+new file mode 100644
+--- /dev/null	(date 1690035215442)
++++ b/app/src/main/java/com/example/nitaclubspot/userProfile.kt	(date 1690035215442)
+@@ -0,0 +1,35 @@
++package com.example.nitaclubspot
++
++import android.content.Intent
++import androidx.appcompat.app.AppCompatActivity
++import android.os.Bundle
++import com.example.nitaclubspot.databinding.ActivityUserProfileBinding
++import com.example.nitaclubspot.ui.login.LoginActivity
++
++class userProfile : AppCompatActivity() {
++    override fun onCreate(savedInstanceState: Bundle?) {
++        super.onCreate(savedInstanceState)
++        val binding = ActivityUserProfileBinding.inflate(layoutInflater)
++        setContentView(binding.root)
++
++        val pref = getSharedPreferences("login", MODE_PRIVATE)
++        val username=pref.getString("username",null)
++
++        if(username!=null){
++            binding.username.text=username
++        }
++        else binding.username.text="user"
++
++        binding.logout.setOnClickListener(){
++            val editor = pref.edit()
++            editor.putBoolean("flag",false)
++            editor.apply()
++
++            finish()
++
++            intent = Intent(this, LoginActivity::class.java)
++            startActivity(intent)
++        }
++
++    }
++}
+\ No newline at end of file
+Index: app/src/main/res/drawable/up_button_modes.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/drawable/up_button_modes.xml b/app/src/main/res/drawable/up_button_modes.xml
+new file mode 100644
+--- /dev/null	(date 1690015780970)
++++ b/app/src/main/res/drawable/up_button_modes.xml	(date 1690015780970)
+@@ -0,0 +1,9 @@
++<?xml version="1.0" encoding="utf-8"?>
++<selector xmlns:android="http://schemas.android.com/apk/res/android">
++
++    <item android:state_selected="true"
++        android:drawable="@drawable/arrow_up_green"/>
++    <item android:state_focused="true" android:drawable="@drawable/arrow_up_grey"/>
++    <item android:drawable="@drawable/arrow_up_grey"/>
++
++</selector>
+\ No newline at end of file
+Index: app/src/main/res/values-w600dp/dimens.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><resources>\r\n    <dimen name=\"activity_horizontal_margin\">48dp</dimen>\r\n</resources>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/values-w600dp/dimens.xml b/app/src/main/res/values-w600dp/dimens.xml
+--- a/app/src/main/res/values-w600dp/dimens.xml	(revision 49397d3d25e504366ce6b826de1fca9cfc64217b)
++++ b/app/src/main/res/values-w600dp/dimens.xml	(date 1690048781013)
+@@ -1,3 +1,6 @@
+ <resources>
+     <dimen name="activity_horizontal_margin">48dp</dimen>
++    <dimen name="fragment_horizontal_margin">48dp</dimen>
++    <dimen name="fab_margin">48dp</dimen>
++    <dimen name="item_transform_image_length">142dp</dimen>
+ </resources>
+\ No newline at end of file
+diff --git a/app/src/main/res/drawable-v24/ic_launcher_foreground.xml b/app/src/main/res/drawable/ic_launcher_foreground.xml
+rename from app/src/main/res/drawable-v24/ic_launcher_foreground.xml
+rename to app/src/main/res/drawable/ic_launcher_foreground.xml

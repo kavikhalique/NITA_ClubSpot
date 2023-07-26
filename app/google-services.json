@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "664513415870",
+    "project_id": "nita-clubspot",
+    "storage_bucket": "nita-clubspot.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:664513415870:android:e2d2427d6ecd51c5406cef",
+        "android_client_info": {
+          "package_name": "com.example.nitaclubspot"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "664513415870-hl9l07o11073m97l21m5e9ickctund8o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA621jGBmQZTiXS5WyA6J4-EuhHd5uoUis"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "664513415870-e3gcq7ua1t31tvl7e6mei4t9463l722k.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
