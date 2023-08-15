@@ -9,7 +9,12 @@ import android.view.ViewGroup
 import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.example.nitaclubspot.databinding.RvEventsRowsBinding
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
+
 class RV_Events_adap(val context: Context): RecyclerView.Adapter<RV_Events_adap.ViewHolder>() {
+
+    private var database = Firebase.firestore
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
@@ -26,8 +31,8 @@ class RV_Events_adap(val context: Context): RecyclerView.Adapter<RV_Events_adap.
 
     var eventsdata : ArrayList<EventsData> = ArrayList()
 
-    fun add(heading:String,content:String){
-        eventsdata.add(EventsData(heading,content))
+    fun add(Data: EventsData){
+        eventsdata.add(Data)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -50,7 +55,7 @@ class RV_Events_adap(val context: Context): RecyclerView.Adapter<RV_Events_adap.
         }
 
         holder.up_button.setOnClickListener(){
-            // if button has aready been clicked then disable it
+            // if button has already been clicked then disable it
             if(holder.up_state){
                 holder.up_state=false
                 holder.up_button.setImageResource(R.drawable.arrow_up_grey)

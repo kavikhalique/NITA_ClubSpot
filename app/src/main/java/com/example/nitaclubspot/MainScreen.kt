@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.view.View
 import androidx.viewpager2.widget.ViewPager2
 import com.example.nitaclubspot.databinding.MainscreenBinding
-import com.example.nitaclubspot.ui.login.LoginActivity
 import com.google.android.material.tabs.TabLayout
 import com.google.firebase.auth.FirebaseAuth
 
@@ -60,7 +59,7 @@ class MainScreen : AppCompatActivity() {
         }
         else{
             //show login
-            intent = Intent(this,LoginActivity::class.java)
+            intent = Intent(this, LoginActivity::class.java)
             startActivity(intent)
         }
     }

@@ -4,12 +4,8 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import com.example.nitaclubspot.databinding.UserProfileBinding
-import com.example.nitaclubspot.ui.login.LoginActivity
-import com.google.android.gms.auth.api.Auth
 import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 
@@ -38,11 +34,11 @@ class userProfile : AppCompatActivity() {
 
             //google logout
             GoogleSignIn.getClient(this, GoogleSignInOptions.DEFAULT_SIGN_IN).signOut()
-
-            finish()
+            finishAffinity()
 
             intent = Intent(this, LoginActivity::class.java)
             startActivity(intent)
+
         }
 
     }

@@ -7,6 +7,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.nitaclubspot.databinding.FragmentEventsBinding
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -22,6 +25,7 @@ class Events : Fragment() {
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
+    private var database = Firebase.firestore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,16 +39,30 @@ class Events : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+
+
+
         // Inflate the layout for this fragment
 
         val view=inflater.inflate(R.layout.fragment_events, container, false)
 
         val adapter= context?.let { RV_Events_adap(it) }
-        for(i in 1..50){
-            if (adapter != null) {
-                adapter.add("heading$i","Content$i")
+
+        database.collection("Events").get()
+            .addOnSuccessListener { result ->
+                for (document in result) {
+                    adapter?.add(EventsData(document.id,document.data["likes"].toString().toInt(),document.data["dislikes"].toString().toInt(),document.data["Header"].toString(),document.data["Dscrp"].toString()))
+                }
             }
-        }
+            .addOnFailureListener { exception ->
+                println("Error getting documents: $exception")
+            }
+
+//        for(i in 1..50){
+//            if (adapter != null) {
+//                adapter.add("heading$i","Content$i")
+//            }
+//        }
         FragmentEventsBinding.bind(view).recyclerView.layoutManager= LinearLayoutManager(context)
         FragmentEventsBinding.bind(view).recyclerView.adapter=adapter
         return view

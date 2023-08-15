@@ -4,21 +4,13 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.animation.AnimationUtils
 import android.widget.EditText
-import android.widget.TextView
 import com.example.nitaclubspot.databinding.ActivityUserSignupBinding
-import com.example.nitaclubspot.ui.login.afterTextChanged
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.Timer
-import java.util.TimerTask
-import java.util.regex.Matcher
-import java.util.regex.Pattern
-import kotlin.concurrent.thread
 
 class user_signup : AppCompatActivity() {
     var job: Job? = null

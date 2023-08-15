@@ -1,6 +1,5 @@
-package com.example.nitaclubspot.data.model
+package com.example.nitaclubspot
 
-import android.app.Activity.RESULT_CANCELED
 import android.app.Activity.RESULT_OK
 import android.content.Context
 import android.content.Intent

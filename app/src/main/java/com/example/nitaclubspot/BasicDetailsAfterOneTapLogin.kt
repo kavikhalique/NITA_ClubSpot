@@ -1,16 +1,13 @@
 package com.example.nitaclubspot
 
-import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.widget.EditText
 import com.example.nitaclubspot.databinding.ActivityBasicDetailsAfterOneTapLoginBinding
-import com.example.nitaclubspot.ui.login.afterTextChanged
-import java.lang.reflect.Array.set
 
- class enabler(
+class enabler(
     var firstname: Boolean= false,
     var lastname: Boolean = false,
     var phone: Boolean = true,

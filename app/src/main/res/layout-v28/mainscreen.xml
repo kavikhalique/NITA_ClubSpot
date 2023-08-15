@@ -21,7 +21,7 @@
 
         <ImageView
             android:layout_gravity="center"
-            android:id="@+id/login"
+            android:id="@+id/sendotp"
             android:contentDescription="login_person"
             android:layout_width="40dp"
             android:layout_height="match_parent"

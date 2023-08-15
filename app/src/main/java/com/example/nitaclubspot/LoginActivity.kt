@@ -1,48 +1,52 @@
-package com.example.nitaclubspot.ui.login
+package com. example.nitaclubspot
 
-import android.app.Activity
+import android.app.Dialog
 import android.app.ProgressDialog
+import android.content.ContentValues.TAG
 import android.content.Intent
-import androidx.lifecycle.Observer
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import androidx.lifecycle.ViewModelProvider
 import android.os.Bundle
-import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
+import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
 import android.view.Window
-import android.view.inputmethod.EditorInfo
+import android.view.WindowManager
+import android.widget.Button
 import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
-import androidx.annotation.LongDef
-import com.example.nitaclubspot.BasicDetailsAfterOneTapLogin
-import com.example.nitaclubspot.MainScreen
+import com.example.nitaclubspot.OTPverification
+import com.example.nitaclubspot.R
+import com.example.nitaclubspot.databinding.ActivityBasicDetailsInputBinding
 import com.example.nitaclubspot.databinding.ActivityLoginBinding
 
-import com.example.nitaclubspot.R
-import com.example.nitaclubspot.data.model.Contract
-import com.example.nitaclubspot.user_signup
-import com.google.android.gms.auth.api.Auth
 import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.tasks.OnSuccessListener
-import com.google.android.gms.tasks.Task
+import com.google.firebase.FirebaseException
+import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthMissingActivityForRecaptchaException
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.PhoneAuthCredential
+import com.google.firebase.auth.PhoneAuthOptions
+import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import kotlin.contracts.contract
+import java.util.concurrent.TimeUnit
 
 class LoginActivity : AppCompatActivity() {
-
-    private lateinit var loginViewModel: LoginViewModel
     private lateinit var binding: ActivityLoginBinding
 
     // Firebase Auth variables
@@ -152,8 +156,6 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-
-
     private lateinit var progressDialogue: ProgressDialog
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -194,135 +196,162 @@ class LoginActivity : AppCompatActivity() {
         }
         //<----------------------------------------------------------------------->
 
-        binding.signup?.setOnClickListener(){
-            intent = Intent(this, user_signup::class.java)
+        //phone auth
+
+        val phoneNumber = binding.phonenumber
+
+        phoneNumber?.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                if (s.toString().length == 10 && s.toString()[0]>='6'){
+                    binding.sendotp.isEnabled = true
+                    binding.sendotp.isClickable = true
+                } else {
+                    binding.sendotp.isEnabled = false
+                    binding.sendotp.isClickable = false
+                }
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                binding.sendotp.isEnabled = false
+                binding.sendotp.isClickable = false
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                binding.sendotp.isEnabled = false
+                binding.sendotp.isClickable = false
+            }
+        })
+
+        binding.sendotp.setOnClickListener(){
+//            intent=Intent(this, OTPverification::class.java)
+//            intent.putExtra("phonenumber", "+91"+phoneNumber?.text.toString())
+            Toast.makeText(this,"+91"+phoneNumber?.text.toString(),Toast.LENGTH_SHORT).show()
+//            startActivity(intent)
+//            finish()
+            val ref=database.collection("user").document("+91"+phoneNumber?.text.toString())
+            ref.get()
+                .addOnSuccessListener {
+                    val docsnap=it
+                    if(it.exists()){
+                        Log.d("TAG","user is already registered")
+//                        Toast.makeText(this,"Welome back ${docsnap.data?.get("displayName")}",Toast.LENGTH_SHORT).show()
+                        val intent = Intent(this, OTPverification::class.java)
+                        intent.putExtra("phonenumber", "+91"+phoneNumber?.text.toString())
+                        intent.putExtra("username", docsnap.data?.get("displayName").toString())
+                        startActivity(intent)
+                    }
+                    else{
+                        showDialogue("+91"+phoneNumber?.text.toString())
+                    }
+                }
+                .addOnFailureListener {
+                    Toast.makeText(this,"Internet Error Occured",Toast.LENGTH_SHORT).show()
+                }
+
+//            showDialogue("+91"+phoneNumber?.text.toString())
+        }
+
+
+        //<----------------------------------------------------------------------->
+
+
+    }
+
+    class enabler(
+        var firstname: Boolean = false,
+        var lastname: Boolean = false,
+        var email: Boolean = false,
+        var username: Boolean = false
+    ){
+        fun enable(): Boolean{
+            return firstname && lastname
+        }
+    }
+
+    fun showDialogue(phoneNumber:String){
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.activity_basic_details_input)
+
+//        val binding2 = ActivityBasicDetailsInputBinding.bind(dialog.findViewById<View?>(android.R.id.content).rootView)
+
+        val enable= enabler()
+
+        val firstname= dialog.findViewById<EditText>(R.id.firstName)
+        val lastname= dialog.findViewById<EditText>(R.id.lastName)
+        val sendOTP= dialog.findViewById<Button>(R.id.sendOTP)
+        val email = dialog.findViewById<EditText>(R.id.email)
+        val phone= dialog.findViewById<EditText>(R.id.phone)
+        val username = dialog.findViewById<EditText>(R.id.username)
+
+
+        firstname.afterTextChanged {
+            enable.firstname = firstname.text.toString().length in 1..19
+                    && firstname.text.toString().matches(Regex("[A-Za-z ]+"))
+            sendOTP.isEnabled = enable.enable()
+        }
+
+        lastname.afterTextChanged {
+            enable.lastname = lastname.text.toString().length in 1..19
+                    && lastname.text.toString().matches(Regex("[A-Za-z ]+"))
+            sendOTP.isEnabled = enable.enable()
+        }
+
+        email.afterTextChanged {
+            enable.email = email.text.toString().matches(Regex("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"))
+            sendOTP.isEnabled = enable.enable()
+        }
+
+        phone.setText(phoneNumber)
+        phone.isEnabled = false
+
+//        val passyear = 2023
+//         val passyear = binding2.passoutYear.text
+//        Log.d("TAG","passyear is ${passyear}")
+
+        sendOTP.setOnClickListener(){
+            intent = Intent(this, OTPverification::class.java)
+            intent.putExtra("firstname", firstname.text.toString())
+            intent.putExtra("lastname",lastname.text.toString())
+            intent.putExtra("phonenumber", phoneNumber)
+            intent.putExtra("username", username.text.toString())
+            intent.putExtra("email", email.text.toString() )
+            intent.putExtra("registered",false)
             startActivity(intent)
         }
 
+        dialog.window?.setLayout(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.WRAP_CONTENT
+        )
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?.attributes?.windowAnimations = R.style.dialog_animation
+        dialog.window?.setGravity(Gravity.BOTTOM)
+        dialog.show()
 
-        val username = binding.username
-        val password = binding.password
-        val login = binding.login
-        val loading = binding.loading
 
-        loginViewModel = ViewModelProvider(this, LoginViewModelFactory())
-            .get(LoginViewModel::class.java)
+    }
 
-        loginViewModel.loginFormState.observe(this@LoginActivity, Observer {
-            val loginState = it ?: return@Observer
 
-            // disable login button unless both username / password is valid
-            login.isEnabled = loginState.isDataValid
 
-            if (loginState.usernameError != null) {
-                username.error = getString(loginState.usernameError)
+
+    fun EditText.afterTextChanged(afterTextChanged: (String) -> Unit) {
+        this.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(editable: Editable?) {
+                afterTextChanged.invoke(editable.toString())
             }
-            if (loginState.passwordError != null) {
-                password.error = getString(loginState.passwordError)
-            }
+
+            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
         })
 
-        //it continuously observes the viemodel and as login results
-        // gets inserted into LoginResult it performs further actions
-        loginViewModel.loginResult.observe(this@LoginActivity, Observer {
-            val loginResult = it ?: return@Observer
-
-            loading.visibility = View.GONE
-            if (loginResult.error != null) {
-                showLoginFailed(loginResult.error)
-            }
-            if (loginResult.success != null) {
-                updateUiWithUser(loginResult.success)
-
-                setResult(Activity.RESULT_OK)
-
-                //Complete and destroy login activity once successful
-
-                finish()
-            }
-        })
-
-        username.afterTextChanged {
-            loginViewModel.loginDataChanged(
-                username.text.toString(),
-                password.text.toString()
-            )
-        }
-
-        password.apply {
-            afterTextChanged {
-                loginViewModel.loginDataChanged(
-                    username.text.toString(),
-                    password.text.toString()
-                )
-            }
-
-            setOnEditorActionListener { _, actionId, _ ->
-                when (actionId) {
-                    EditorInfo.IME_ACTION_DONE ->
-                        loginViewModel.login(
-                            username.text.toString(),
-                            password.text.toString()
-                        )
-                }
-                false
-            }
-
-            login.setOnClickListener {
-
-                loading.visibility = View.VISIBLE
-                loginViewModel.login(username.text.toString(), password.text.toString())
-            }
-        }
     }
-
-    private fun updateUiWithUser(model: LoggedInUserView) {
-        val welcome = getString(R.string.welcome)
-        val displayName = model.displayName
-        // TODO : initiate successful logged in experience
-
-        val pref = getSharedPreferences("login", MODE_PRIVATE)
-        val editor = pref.edit()
-        editor.putBoolean("flag",true)
-        editor.putString("username",displayName)
-        editor.apply()
-
-        Toast.makeText(
-            applicationContext,
-            "$welcome $displayName",
-            Toast.LENGTH_LONG
-        ).show()
-
-        with(window){
-            requestFeature(Window.FEATURE_CONTENT_TRANSITIONS)
-            enterTransition = android.transition.Fade()
-            exitTransition =  android.transition.Fade()
-        }
-        intent = Intent(this, MainScreen::class.java)
-        startActivity(intent)
-
-    }
-
-    private fun showLoginFailed(@StringRes errorString: Int) {
-        Toast.makeText(applicationContext, errorString, Toast.LENGTH_SHORT).show()
-    }
-
 
     }
 
 /**
  * Extension function to simplify setting an afterTextChanged action to EditText components.
  */
-fun EditText.afterTextChanged(afterTextChanged: (String) -> Unit) {
-    this.addTextChangedListener(object : TextWatcher {
-        override fun afterTextChanged(editable: Editable?) {
-            afterTextChanged.invoke(editable.toString())
-        }
 
-        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
-
-        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
-    })
-
-}
 

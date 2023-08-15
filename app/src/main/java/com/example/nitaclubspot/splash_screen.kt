@@ -4,14 +4,9 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Looper
-import android.view.View
 import android.view.animation.AnimationUtils
 import com.example.nitaclubspot.databinding.ActivitySplashScreenBinding
-import com.example.nitaclubspot.ui.login.LoginActivity
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.ktx.Firebase
-import java.util.logging.Handler
-import java.util.logging.LogRecord
 
 class splash_screen : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,7 +29,7 @@ class splash_screen : AppCompatActivity() {
                 startActivity(intent)
             }
             else{
-                intent = Intent(this,LoginActivity::class.java)
+                intent = Intent(this, LoginActivity::class.java)
                 startActivity(intent)
             }
             finish()
