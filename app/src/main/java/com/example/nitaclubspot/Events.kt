@@ -1,6 +1,7 @@
 package com.example.nitaclubspot
 
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -47,24 +48,22 @@ class Events : Fragment() {
         val view=inflater.inflate(R.layout.fragment_events, container, false)
 
         val adapter= context?.let { RV_Events_adap(it) }
+        val temp: ArrayList<EventsData> = ArrayList()
+
+        FragmentEventsBinding.bind(view).recyclerView.layoutManager= LinearLayoutManager(context)
 
         database.collection("Events").get()
             .addOnSuccessListener { result ->
+                Log.d("TAG", "Success")
                 for (document in result) {
-                    adapter?.add(EventsData(document.id,document.data["likes"].toString().toInt(),document.data["dislikes"].toString().toInt(),document.data["Header"].toString(),document.data["Dscrp"].toString()))
+                    adapter?.add(EventsData(document.id ,document.data
+                        ["votes"].toString().toInt(),document.data["Heading"].toString(),document.data["Intro"].toString()))
+                    FragmentEventsBinding.bind(view).recyclerView.adapter=adapter
                 }
             }
             .addOnFailureListener { exception ->
                 println("Error getting documents: $exception")
             }
-
-//        for(i in 1..50){
-//            if (adapter != null) {
-//                adapter.add("heading$i","Content$i")
-//            }
-//        }
-        FragmentEventsBinding.bind(view).recyclerView.layoutManager= LinearLayoutManager(context)
-        FragmentEventsBinding.bind(view).recyclerView.adapter=adapter
         return view
     }
 

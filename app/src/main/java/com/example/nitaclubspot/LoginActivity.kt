@@ -22,6 +22,9 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import com.example.nitaclubspot.BasicDetailsAfterOneTapLogin
+import com.example.nitaclubspot.Contract
+import com.example.nitaclubspot.MainScreen
 import com.example.nitaclubspot.OTPverification
 import com.example.nitaclubspot.R
 import com.example.nitaclubspot.databinding.ActivityBasicDetailsInputBinding
@@ -41,6 +44,7 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -59,41 +63,44 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var googleSignInClient: GoogleSignInClient
     val contract= registerForActivityResult(Contract()){
         val task = GoogleSignIn.getSignedInAccountFromIntent(it)
-        try{
-            val account = task.getResult(ApiException::class.java)
-            val ref=database.collection("user").document(account?.email.toString())
-            ref.get()
+        try {
+            auth.signInWithCredential(GoogleAuthProvider.getCredential(task.result?.idToken, null))
                 .addOnSuccessListener {
-                    val docsnap=it
-                    if(it.exists()){
-                        Log.d("TAG","user is already registered")
-
-                        //authorizing firebase
-                        auth.signInWithCredential(GoogleAuthProvider.getCredential(account.idToken,null))
-                            .addOnSuccessListener {
-                                intent = Intent(this, MainScreen::class.java)
-                                Toast.makeText(this,"Welome back ${docsnap.data?.get("displayName")}",Toast.LENGTH_SHORT).show()
-                                startActivity(intent)
-                                finish()
-                            }
-                            .addOnFailureListener {
-                                Toast.makeText(this,"Error Occured",Toast.LENGTH_SHORT).show()
-                            }
-
-                    }
-                    else{
-                        googletoken=GoogleAuthProvider.getCredential(account?.idToken,null)
-                        var intent = Intent(this,BasicDetailsAfterOneTapLogin::class.java)
-                        Log.d("TAG","Called intent for more information")
-                        intent.putExtra("username",account?.displayName.toString())
+                    if (it.additionalUserInfo?.isNewUser == true) {
+                        Log.d("TAG", "user is not registered")
+                        googletoken = GoogleAuthProvider.getCredential(task.result?.idToken, null)
+                        var intent = Intent(this, BasicDetailsAfterOneTapLogin::class.java)
+                        Log.d("TAG", "Called intent for more information")
+                        intent.putExtra("username", task.result?.displayName.toString())
                         moredetailscontract.launch(intent)
-                    }
-//                    firebaseAuthWithGoogleAccount(account.getIdToken()!!)
-                }
-                .addOnFailureListener {
-                    Toast.makeText(this,"Internet Error Occured",Toast.LENGTH_SHORT).show()
-                }
+                    } else {
+                        database.collection("user").document(auth.currentUser!!.uid)
+                            .get()
+                            .addOnSuccessListener {
+                                if(it.data?.get("firstname") !=null && it.data?.get("lastname")!=null && it.data?.get("phone")!=null && it.data?.get("passyear")!=null){
+                                    Log.d("TAG", "user is already registered")
+                                    intent = Intent(this, MainScreen::class.java)
+                                    Toast.makeText(this, "Welome back ${task.result?.displayName}", Toast.LENGTH_SHORT).show()
+                                    startActivity(intent)
+                                    finish()
+                                }
+                                else{
+                                    Log.d("TAG", "user is not registered")
+                                    googletoken = GoogleAuthProvider.getCredential(task.result?.idToken, null)
+                                    var intent = Intent(this, BasicDetailsAfterOneTapLogin::class.java)
+                                    Log.d("TAG", "Called intent for more information")
+                                    intent.putExtra("username", task.result?.displayName.toString())
+                                    moredetailscontract.launch(intent)
+                                }
+                            }
+                            .addOnFailureListener{
+                                Toast.makeText(this,"Error Occured in internet",Toast.LENGTH_SHORT).show()
+                            }
 
+
+                    }
+
+                }
         }
         catch (e:Exception){
             Toast.makeText(this,e.message,Toast.LENGTH_SHORT).show()
@@ -108,51 +115,58 @@ class LoginActivity : AppCompatActivity() {
 
         if (it != null) {
             //Registering user on firebase auth
-            Log.d("TAG","registering user on firebase auth")
-            auth.signInWithCredential(googletoken)
-                .addOnCompleteListener(this) { authResult ->
-                    Log.d("TAG","firebaseAuthWithGoogleAccount: ${authResult.isSuccessful}")
-                    progressDialogue.dismiss()
-                    val firebaseUser = auth.currentUser
-                    val uid = firebaseUser!!.uid
-                    val email = firebaseUser!!.email.toString()
-                    val username = firebaseUser.displayName.toString()
-                    Log.d("TAG","user registered on firebase auth")
 
-                    //uploading data on firestore
-                    Log.d("TAG","data upload on firestore")
-                    val user = hashMapOf(
-                        "displayName" to it.getStringExtra("username"),
-                        "email" to email,
-                        "name"  to hashMapOf<String,String>(
-                            "firstname" to it.getStringExtra("firstname").toString(),
-                            "lastname"  to it.getStringExtra("lastname").toString()
-                        ),
-                        "phone" to it.getStringExtra("phone").toString(),
-                        "passyear" to it.getStringExtra("passyear").toString(),
-                    )
-                    val firstname = it.getStringExtra("firstname")
-                    database.collection("user").document(email).set(user)
-                        .addOnSuccessListener {
-                            Log.d("TAG","data uploaded on firestore")
-                            Toast.makeText(this,"You are logged in ${firstname}",Toast.LENGTH_SHORT).show()
-                            intent = Intent(this, MainScreen::class.java)
-                            startActivity(intent)
-                            finish()
-                        }
-                        .addOnFailureListener { e ->
-                            Log.d("TAG","data not uploaded on firestore")
-                            Toast.makeText(this, "fucked", Toast.LENGTH_SHORT).show()
-                        }
+            progressDialogue.dismiss()
+                    if(it.getStringExtra("firstname")!=null && it.getStringExtra("lastname")!=null && it.getStringExtra("phone")!=null){
+                        val firebaseUser = auth.currentUser
+                        val uid = firebaseUser!!.uid
+                        val email = firebaseUser.email.toString()
+                        val username = firebaseUser.displayName.toString()
+                        Log.d("TAG","user registered on firebase auth")
 
-                }
-                .addOnFailureListener{e->
-                    progressDialogue.dismiss()
-                    Toast.makeText(this,e.message,Toast.LENGTH_SHORT).show()
-                }
+                        //uploading data on firestore
+                        Log.d("TAG","data upload on firestore")
+                        val user = hashMapOf(
+                            "displayName" to it.getStringExtra("username"),
+                            "email" to email,
+                            "name"  to hashMapOf<String,String>(
+                                "firstname" to it.getStringExtra("firstname").toString(),
+                                "lastname"  to it.getStringExtra("lastname").toString()
+                            ),
+                            "phone" to it.getStringExtra("phone").toString(),
+                            "passyear" to it.getStringExtra("passyear").toString(),
+                        )
+                        val firstname = it.getStringExtra("firstname")
+                        database.collection("user").document(auth.currentUser!!.uid).set(user)
+                            .addOnSuccessListener {
+                                Log.d("TAG","data uploaded on firestore")
+                                Toast.makeText(this,"You are logged in ${firstname}",Toast.LENGTH_SHORT).show()
+                                intent = Intent(this, MainScreen::class.java)
+                                startActivity(intent)
+                                finish()
+                            }
+                            .addOnFailureListener { e ->
+                                Log.d("TAG","data not uploaded on firestore")
+                                Toast.makeText(this, "fucked", Toast.LENGTH_SHORT).show()
+                            }
+                    }
+                    else{
+                        Toast.makeText(this,"Please Fill All Details",Toast.LENGTH_SHORT).show()
+                        //firebase logout
+                        Firebase.auth.signOut()
+
+                        //google logout
+                        GoogleSignIn.getClient(this, GoogleSignInOptions.DEFAULT_SIGN_IN).signOut()
+                    }
         }
         else{
-            Toast.makeText(this,"Error Occured",Toast.LENGTH_SHORT).show()
+            Toast.makeText(this,"User pressed back",Toast.LENGTH_SHORT).show()
+            Toast.makeText(this,"Please Fill All Details",Toast.LENGTH_SHORT).show()
+            //firebase logout
+            Firebase.auth.signOut()
+
+            //google logout
+            GoogleSignIn.getClient(this, GoogleSignInOptions.DEFAULT_SIGN_IN).signOut()
         }
     }
 
@@ -188,11 +202,10 @@ class LoginActivity : AppCompatActivity() {
             .requestEmail().build()
 
         googleSignInClient = GoogleSignIn.getClient(this,gso)
-
-
         binding.google?.setOnClickListener(){
             val intent = googleSignInClient.signInIntent
             contract.launch(intent)
+
         }
         //<----------------------------------------------------------------------->
 
