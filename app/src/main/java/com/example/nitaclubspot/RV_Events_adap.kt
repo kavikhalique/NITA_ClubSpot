@@ -2,10 +2,16 @@ package com.example.nitaclubspot
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.example.nitaclubspot.databinding.RvEventsRowsBinding
@@ -14,6 +20,8 @@ import com.google.firebase.auth.ktx.oAuthCredential
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import java.util.concurrent.Executors
+import kotlin.math.log
 
 class RV_Events_adap(val context: Context): RecyclerView.Adapter<RV_Events_adap.ViewHolder>() {
 
@@ -26,11 +34,10 @@ class RV_Events_adap(val context: Context): RecyclerView.Adapter<RV_Events_adap.
         val binding = RvEventsRowsBinding.bind(itemView)
         val up_button = binding.upbutton
         val down_button = binding.downbutton
-        var up_state = false
-        var down_state = false
         val votes = binding.votes
         val heading = binding.heading
         val content = binding.content
+        val imageView = binding.img
         val view = itemView
     }
 
@@ -50,9 +57,10 @@ class RV_Events_adap(val context: Context): RecyclerView.Adapter<RV_Events_adap.
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
 
-//        val uid = Firebase.auth.uid
-        val uid = "+918604643478"
+        val uid = Firebase.auth.uid
         val eid = eventsdata[position].eventid
+
+        // Check if user has already liked the event
         database.collection("user").document(uid.toString()).get()
             .addOnSuccessListener {
                 val data = it.data
@@ -74,6 +82,25 @@ class RV_Events_adap(val context: Context): RecyclerView.Adapter<RV_Events_adap.
                     }
                 }
             }
+
+        Log.d("TAG", eventsdata[position].imageUrl)
+        // Load image from url
+        if(eventsdata[position].imageUrl != "null"){
+            val executor = Executors.newSingleThreadExecutor()
+            val handler = Handler(Looper.getMainLooper())
+            try {
+                executor.execute {
+                    val bitmap = BitmapFactory.decodeStream(java.net.URL(eventsdata[position].imageUrl).openStream())
+                    handler.post {
+                        holder.imageView.setImageBitmap(bitmap)
+                    }
+                }
+            }
+            catch (e: Exception){
+                Log.d("TAG", "Error: $e")
+                Toast.makeText(context, "Error in loading image", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         holder.heading.text = eventsdata[position].Header
         holder.content.text = eventsdata[position].Dscrp

@@ -57,7 +57,7 @@ class Events : Fragment() {
                 Log.d("TAG", "Success")
                 for (document in result) {
                     adapter?.add(EventsData(document.id ,document.data
-                        ["votes"].toString().toInt(),document.data["Heading"].toString(),document.data["Intro"].toString()))
+                        ["votes"].toString().toInt(),document.data["Heading"].toString(),document.data["Intro"].toString(),document.data["ImageUrl"].toString()))
                     FragmentEventsBinding.bind(view).recyclerView.adapter=adapter
                 }
             }

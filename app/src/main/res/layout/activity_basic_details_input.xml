@@ -7,8 +7,7 @@
     android:id="@+id/root"
     android:background= "@drawable/dialog_design"
     android:orientation="vertical"
-    android:layout_height="wrap_content"
-    tools:context=".BasicDetailsInput">
+    android:layout_height="wrap_content">
 
     <LinearLayout
         android:layout_width="match_parent"

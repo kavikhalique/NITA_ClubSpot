@@ -4,5 +4,6 @@ data class EventsData(
     val eventid: String,
     val votes: Int,
     val Header: String,
-    val Dscrp: String
+    val Dscrp: String,
+    val imageUrl: String
 )
